@@ -17,7 +17,7 @@ typedef struct {
 } Food, Snakenode;
 
 typedef struct {
-    Snakenode body[1000];
+    Snakenode snakeNode[1000];
     int length;
     int speed;
 } Snake;
