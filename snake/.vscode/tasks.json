@@ -8,15 +8,16 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${workspaceFolder}\\snake_main.c",
-                "${workspaceFolder}\\snake\\snake.c",
-                "-I",
-                "${workspaceFolder}\\snake",
+                "${workspaceFolder}\\snake.c",
                 "-o",
-                "${workspaceFolder}\\snake_main.exe"
+                "${workspaceFolder}\\snake.exe"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${fileDirname}"
             },
+            "problemMatcher": [
+                "$gcc"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true

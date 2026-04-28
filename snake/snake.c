@@ -7,15 +7,15 @@ char direction = RIGHT; // expected direction based on user input
 
 int Menu(){
     GotoXY(40, 12);
-    printf("欢迎来到贪吃蛇\r\n");
-    GotoXY(43, 13);
-    printf("1. 开始游戏\r\n");
+    printf("Welcome to Snake\r\n");
+    GotoXY(43, 14);
+    printf("1. Start Game\r\n");
     GotoXY(43, 16);
-    printf("2. 帮助\r\n");
+    printf("2. Help\r\n");
     GotoXY(43, 18);
-    printf("3. 关于\r\n");
+    printf("3. About\r\n");
     GotoXY(43, 20);
-    printf("按任意键退出\r\n");
+    printf("0. Exit\r\n");
     Hide();
 
     char ch;
@@ -38,36 +38,36 @@ void GotoXY(int x, int y){
 }
 void Hide(){
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO cursorInfo = {1, 0};
+    CONSOLE_CURSOR_INFO cursorInfo;
     GetConsoleCursorInfo(hOut, &cursorInfo);
-    // cursorInfo.bVisible = FALSE;
+    cursorInfo.bVisible = FALSE;
     SetConsoleCursorInfo(hOut, &cursorInfo);
 }
 void About(){
     GotoXY(40, 12);
-    printf("这是一个用C语言编写的贪吃蛇游戏\r\n");
+    printf("This is a Snake game in C\r\n");
     GotoXY(40, 14);
-    printf("按任意键返回菜单\r\n");
+    printf("Press any key to return\r\n");
     Hide();
     char ch = _getch();
     system("cls");
 }
 void Help(){
     GotoXY(40, 12);
-    printf("使用WASD键控制蛇的移动\r\n");
+    printf("Use WASD to move\r\n");
     GotoXY(40, 14);
-    printf("w 上\r\n");
+    printf("w UP\r\n");
     GotoXY(40, 16);
-    printf("s 下\r\n");
+    printf("s DOWN\r\n");
     GotoXY(40, 18);
-    printf("a 左\r\n");
+    printf("a LEFT\r\n");
     GotoXY(40, 20);
-    printf("d 右\r\n");
+    printf("d RIGHT\r\n");
 
     GotoXY(40, 22);
-    printf("吃到食物会变长，撞到自己或墙壁会游戏结束\r\n");
+    printf("Eat to grow, hit wall or yourself to lose\r\n");
     GotoXY(40, 24);
-    printf("按任意键返回菜单\r\n");
+    printf("Press any key to return\r\n");
     Hide();
     char ch = _getch();
     system("cls");
@@ -96,8 +96,8 @@ void InitMap(){
     }
 
     PrintFood();
-    GotoXY(0, 50);
-    prinf("当前得分: 0");
+    // GotoXY(0, 0);
+    // printf("Current Score: 0");
 }
 void PrintFood(){
     int flag = 1;
@@ -120,11 +120,13 @@ int MoveSnake(){
     int flag = 0;
     for (int i = snake.length - 1; i > 0; --i){
         snake.snakeNode[i] = snake.snakeNode[i - 1];
+        Hide();
     }
     GotoXY(snake.snakeNode[1].x, snake.snakeNode[1].y);
     printf("o");
 
     if (_kbhit()){
+        Hide();
         direction = _getch();
         switch (direction){
             case UP:
@@ -148,8 +150,14 @@ int MoveSnake(){
         case RIGHT: snake.snakeNode[0].x += 1; break;
     }
 
+    if (snake.snakeNode[0].x <= 0) snake.snakeNode[0].x = MAP_WIDTH - 2;
+    if (snake.snakeNode[0].x >= MAP_WIDTH - 1) snake.snakeNode[0].x = 1;
+    if (snake.snakeNode[0].y <= 0) snake.snakeNode[0].y = MAP_HEIGHT - 2;
+    if (snake.snakeNode[0].y >= MAP_HEIGHT - 1) snake.snakeNode[0].y = 1;
+
     GotoXY(snake.snakeNode[0].x, snake.snakeNode[0].y);
     printf("@");
+    Hide();
 
     if (snake.snakeNode[0].x == food.x && snake.snakeNode[0].y == food.y){
         ++snake.length;
@@ -164,17 +172,18 @@ int MoveSnake(){
     else {
         PrintFood();
         GotoXY(50, 5);
-        printf("当前得分: %d", snake.length - 3);
+        printf("Current Score: %d", snake.length - 3);
     }
 
-    if (IsCorrect()){
+    if (!IsCorrect()){
         system("cls");
         GotoXY(45, 14);
-        printf("最终得分: %d", snake.length - 3);
+        printf("Final Score: %d", snake.length - 3);
         GotoXY(45, 16);
-        printf("你输了!\r\n");
+        printf("Game Over!\r\n");
         GotoXY(45, 18);
-        printf("按任意键返回菜单\r\n");
+        printf("Press any key to return\r\n");
+        _getch();
         system("cls");
         return 0;
     }
@@ -184,9 +193,6 @@ int MoveSnake(){
     return 1;
 }
 int IsCorrect(){
-    if (snake.snakeNode[0].x <= 0 || snake.snakeNode[0].x >= MAP_WIDTH - 1 || snake.snakeNode[0].y <= 0 || snake.snakeNode[0].y >= MAP_HEIGHT - 1){
-        return 0;
-    }
     for (int i = 1; i < snake.length; ++i){
         if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
             return 0;
