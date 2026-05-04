@@ -39,7 +39,7 @@ typedef struct {
 extern Snake snake;
 extern Food food;
 extern Obstacle obstacles[OBSTACLE_COUNT];
-extern DynamicObstacle dyn_obs;
+extern DynamicObstacle moving_obs;
 extern int invincible_timer;
 extern DWORD slow_timer;
 

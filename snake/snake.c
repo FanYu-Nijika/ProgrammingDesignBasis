@@ -5,7 +5,7 @@ Food food;
 char now_dir = RIGHT; // 蛇的初始方向
 char direction = RIGHT; // 根据用户输入的预期方向
 Obstacle obstacles[OBSTACLE_COUNT]; // 地图上的障碍物
-DynamicObstacle dyn_obs;
+DynamicObstacle moving_obs;
 int invincible_timer = 0;
 DWORD slow_timer = 0;
 
@@ -287,7 +287,7 @@ int IsCorrect(){
         }
     }
     // 检测是否碰到动态障碍物
-    if (snake.snakeNode[0].x == dyn_obs.x && snake.snakeNode[0].y == dyn_obs.y) {
+    if (snake.snakeNode[0].x == moving_obs.x && snake.snakeNode[0].y == moving_obs.y) {
         return 0;
     }
     return 1;
@@ -382,24 +382,24 @@ void SkillControl() {
 }
 
 void InitDynamicObstacle() {
-    dyn_obs.x = MAP_WIDTH / 2;
-    dyn_obs.y = MAP_HEIGHT / 2;
-    dyn_obs.dir = 1;
+    moving_obs.x = MAP_WIDTH / 2;
+    moving_obs.y = MAP_HEIGHT / 2;
+    moving_obs.dir = 1;
 }
 
 void MoveDynamicObstacle() {
-    GotoXY(dyn_obs.x, dyn_obs.y);
+    GotoXY(moving_obs.x, moving_obs.y);
     printf(" ");
     
-    dyn_obs.x += dyn_obs.dir;
-    if (dyn_obs.x <= 1) {
-        dyn_obs.x = 2;
-        dyn_obs.dir = 1;
-    } else if (dyn_obs.x >= MAP_WIDTH - 2) {
-        dyn_obs.x = MAP_WIDTH - 3;
-        dyn_obs.dir = -1;
+    moving_obs.x += moving_obs.dir;
+    if (moving_obs.x <= 1) {
+        moving_obs.x = 2;
+        moving_obs.dir = 1;
+    } else if (moving_obs.x >= MAP_WIDTH - 2) {
+        moving_obs.x = MAP_WIDTH - 3;
+        moving_obs.dir = -1;
     }
     
-    GotoXY(dyn_obs.x, dyn_obs.y);
-    printf("M"); // M for dynamic obstacle
+    GotoXY(moving_obs.x, moving_obs.y);
+    printf("M");
 }
