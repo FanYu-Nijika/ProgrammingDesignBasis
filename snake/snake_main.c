@@ -15,6 +15,9 @@ int main(){
         else if (result == 3){
             About();
         }
+        else if (result == 4){
+            Leaderboard();
+        }
         else if (result == 0){
             end = 0;
         }

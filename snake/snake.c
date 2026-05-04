@@ -4,6 +4,7 @@ Snake snake;
 Food food;
 char now_dir = RIGHT; // Initial direction of the snake
 char direction = RIGHT; // expected direction based on user input
+Obstacle obstacles[OBSTACLE_COUNT]; // obstacles on map
 
 int Menu(){
     GotoXY(40, 12);
@@ -15,6 +16,8 @@ int Menu(){
     GotoXY(43, 18);
     printf("3. About\r\n");
     GotoXY(43, 20);
+    printf("4. Leaderboard\r\n");
+    GotoXY(43, 22);
     printf("0. Exit\r\n");
     Hide();
 
@@ -25,6 +28,7 @@ int Menu(){
         case '1': result = 1; break;
         case '2': result = 2; break;
         case '3': result = 3; break;
+        case '4': result = 4; break;
     }
     system("cls"); // Clear the screen
     return result;
@@ -95,29 +99,47 @@ void InitMap(){
         printf("|");
     }
 
+    // generate obstacles first so food won't spawn on them
+    PrintObstacles();
     PrintFood();
     // GotoXY(0, 0);
     // printf("Current Score: 0");
 }
 void PrintFood(){
+    // Place food at random position not overlapping snake or obstacles
     int flag = 1;
     while (flag){
         flag = 0;
         food.x = rand() % (MAP_WIDTH - 2) + 1;
         food.y = rand() % (MAP_HEIGHT - 2) + 1;
+        // avoid snake
         for (int k = 0; k <= snake.length - 1; ++k){
             if (food.x == snake.snakeNode[k].x && food.y == snake.snakeNode[k].y){
                 flag = 1;
                 break;
             }
         }
+        // avoid obstacles
+        if (!flag){
+            for (int o = 0; o < OBSTACLE_COUNT; ++o){
+                if (food.x == obstacles[o].x && food.y == obstacles[o].y){
+                    flag = 1; break;
+                }
+            }
+        }
     }
+    // choose a random food type: 1 small, 2 medium, 3 big
+    food.type = rand() % 3 + 1;
     GotoXY(food.x, food.y);
-    printf("$");
+    // different symbol per food type
+    if (food.type == 1) printf("$");
+    else if (food.type == 2) printf("&");
+    else printf("*");
 }
 int MoveSnake(){
     Snakenode temp = snake.snakeNode[snake.length - 1];
     int flag = 0;
+    int old_length = snake.length;
     for (int i = snake.length - 1; i > 0; --i){
         snake.snakeNode[i] = snake.snakeNode[i - 1];
         Hide();
@@ -158,21 +180,42 @@ int MoveSnake(){
     GotoXY(snake.snakeNode[0].x, snake.snakeNode[0].y);
     printf("@");
     Hide();
-
+    // check if ate food
     if (snake.snakeNode[0].x == food.x && snake.snakeNode[0].y == food.y){
-        ++snake.length;
+        int grow = food.type; // growth depends on food type
+        // append copies of previous tail position to represent growth
+        for (int g = 0; g < grow; ++g){
+            if (snake.length < 1000){
+                snake.snakeNode[snake.length] = temp;
+                snake.length++;
+            }
+        }
         flag = 1;
-        snake.snakeNode[snake.length - 1] = temp;
     }
-    
+
     if (!flag){
+        // erase previous tail
         GotoXY(temp.x, temp.y);
         printf(" ");
-    }
-    else {
+    } else {
+        // place new food and update score display
         PrintFood();
         GotoXY(50, 5);
         printf("Current Score: %d", snake.length - 3);
+    }
+
+    // handle self-collision by trimming tail instead of ending game
+    for (int i = 1; i < snake.length; ++i){
+        if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
+            int new_length = i; // snake becomes length up to collision index
+            // erase the removed parts from screen
+            for (int j = new_length; j < snake.length; ++j){
+                GotoXY(snake.snakeNode[j].x, snake.snakeNode[j].y);
+                printf(" ");
+            }
+            snake.length = new_length;
+            break;
+        }
     }
 
     if (!IsCorrect()){
@@ -183,6 +226,8 @@ int MoveSnake(){
         printf("Game Over!\r\n");
         GotoXY(45, 18);
         printf("Press any key to return\r\n");
+        // save score to leaderboard
+        SaveScore(snake.length - 3);
         _getch();
         system("cls");
         return 0;
@@ -193,12 +238,72 @@ int MoveSnake(){
     return 1;
 }
 int IsCorrect(){
-    for (int i = 1; i < snake.length; ++i){
-        if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
+    // check collision with obstacles: hitting obstacle ends game
+    for (int o = 0; o < OBSTACLE_COUNT; ++o){
+        if (snake.snakeNode[0].x == obstacles[o].x && snake.snakeNode[0].y == obstacles[o].y){
             return 0;
         }
     }
     return 1;
+}
+
+// Generate and print obstacles at random positions (avoid snake area)
+void PrintObstacles(){
+    for (int i = 0; i < OBSTACLE_COUNT; ++i){
+        int ok = 0;
+        while (!ok){
+            ok = 1;
+            obstacles[i].x = rand() % (MAP_WIDTH - 2) + 1;
+            obstacles[i].y = rand() % (MAP_HEIGHT - 2) + 1;
+            // avoid initial snake
+            for (int k = 0; k < snake.length; ++k){
+                if (obstacles[i].x == snake.snakeNode[k].x && obstacles[i].y == snake.snakeNode[k].y){
+                    ok = 0; break;
+                }
+            }
+        }
+        GotoXY(obstacles[i].x, obstacles[i].y);
+        printf("X");
+    }
+}
+
+// Save score to leaderboard file (append)
+void SaveScore(int score){
+    FILE *f = fopen("leaderboard.txt", "a");
+    if (!f) return;
+    fprintf(f, "%d\n", score);
+    fclose(f);
+}
+
+// Read leaderboard and display top scores
+void Leaderboard(){
+    // read scores
+    FILE *f = fopen("leaderboard.txt", "r");
+    int scores[1000];
+    int cnt = 0;
+    if (f){
+        while (cnt < 1000 && fscanf(f, "%d", &scores[cnt]) == 1) cnt++;
+        fclose(f);
+    }
+    // sort descending
+    for (int i = 0; i < cnt; ++i){
+        for (int j = i + 1; j < cnt; ++j){
+            if (scores[j] > scores[i]){
+                int t = scores[i]; scores[i] = scores[j]; scores[j] = t;
+            }
+        }
+    }
+    system("cls");
+    GotoXY(40, 10);
+    printf("Leaderboard - Top %d\r\n", cnt < 10 ? cnt : 10);
+    for (int i = 0; i < cnt && i < 10; ++i){
+        GotoXY(40, 12 + i * 2);
+        printf("%d. %d\r\n", i + 1, scores[i]);
+    }
+    GotoXY(40, 12 + (cnt < 10 ? cnt : 10) * 2 + 2);
+    printf("Press any key to return\r\n");
+    _getch();
+    system("cls");
 }
 void SpeedControl(){
     switch (snake.length){
