@@ -5,6 +5,9 @@ Food food;
 char now_dir = RIGHT; // 蛇的初始方向
 char direction = RIGHT; // 根据用户输入的预期方向
 Obstacle obstacles[OBSTACLE_COUNT]; // 地图上的障碍物
+DynamicObstacle dyn_obs;
+int invincible_timer = 0;
+DWORD slow_timer = 0;
 
 int Menu(){
     GotoXY(40, 12);
@@ -101,6 +104,9 @@ void InitMap(){
 
     // 首先生成障碍物，以便食物不会在它们上面生成
     PrintObstacles();
+    InitDynamicObstacle();
+    invincible_timer = 0;
+    slow_timer = 0;
     PrintFood();
     // GotoXY(0, 0);
     // printf("Current Score: 0");
@@ -163,6 +169,12 @@ int MoveSnake(){
             case RIGHT:
                 if (now_dir != LEFT) now_dir = RIGHT;
                 break;
+            case 'q':
+                if (invincible_timer == 0) invincible_timer = 5; // 无敌帧
+                break;
+            case 'e':
+                if (slow_timer == 0) slow_timer = GetTickCount() + 5000; // 减速帧 5秒 (5000毫秒)
+                break;
         }
     }
     switch (now_dir){
@@ -178,7 +190,8 @@ int MoveSnake(){
     if (snake.snakeNode[0].y >= MAP_HEIGHT - 1) snake.snakeNode[0].y = 1;
 
     GotoXY(snake.snakeNode[0].x, snake.snakeNode[0].y);
-    printf("@");
+    if (invincible_timer > 0) printf("#");
+    else printf("@");
     Hide();
     // 检查是否吃到了食物
     if (snake.snakeNode[0].x == food.x && snake.snakeNode[0].y == food.y){
@@ -196,7 +209,18 @@ int MoveSnake(){
     if (!flag){
         // 擦除之前的尾部
         GotoXY(temp.x, temp.y);
-        printf(" ");
+        int is_obstacle = 0;
+        for (int o = 0; o < OBSTACLE_COUNT; ++o){
+            if (temp.x == obstacles[o].x && temp.y == obstacles[o].y){
+                is_obstacle = 1;
+                break;
+            }
+        }
+        if (is_obstacle) {
+            printf("X");
+        } else {
+            printf(" ");
+        }
     } else {
         // 放置新食物并更新分数显示
         PrintFood();
@@ -205,16 +229,18 @@ int MoveSnake(){
     }
 
     // 处理自身碰撞通过剪断尾巴而不是直接结束游戏
-    for (int i = 1; i < snake.length; ++i){
-        if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
-            int new_length = i; // 蛇身长变为到碰撞索引的位置
-            // 将截断的部分从屏幕上擦除
-            for (int j = new_length; j < snake.length; ++j){
-                GotoXY(snake.snakeNode[j].x, snake.snakeNode[j].y);
-                printf(" ");
+    if (invincible_timer == 0) {
+        for (int i = 1; i < snake.length; ++i){
+            if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
+                int new_length = i; // 蛇身长变为到碰撞索引的位置
+                // 将截断的部分从屏幕上擦除
+                for (int j = new_length; j < snake.length; ++j){
+                    GotoXY(snake.snakeNode[j].x, snake.snakeNode[j].y);
+                    printf(" ");
+                }
+                snake.length = new_length;
+                break;
             }
-            snake.length = new_length;
-            break;
         }
     }
 
@@ -233,16 +259,36 @@ int MoveSnake(){
         return 0;
     }
 
+    SkillControl();
+    MoveDynamicObstacle();
     SpeedControl();
-    Sleep(snake.speed);
+    
+    // 重新绘制一次食物，确保不会被动态物体或特效意外永久擦除
+    // 这里只进行绘图，不改变坐标，属于优先显示食物策略
+    GotoXY(food.x, food.y);
+    if (food.type == 1) printf("$");
+    else if (food.type == 2) printf("&");
+    else printf("*");
+    
+    int final_speed = snake.speed;
+    if (slow_timer > GetTickCount()) {
+        final_speed += 150; // 增加延迟，降低速度
+    }
+    Sleep(final_speed);
     return 1;
 }
 int IsCorrect(){
+    if (invincible_timer > 0) return 1;
+
     // 检测是否与障碍物发生碰撞：撞角将结束游戏
     for (int o = 0; o < OBSTACLE_COUNT; ++o){
         if (snake.snakeNode[0].x == obstacles[o].x && snake.snakeNode[0].y == obstacles[o].y){
             return 0;
         }
+    }
+    // 检测是否碰到动态障碍物
+    if (snake.snakeNode[0].x == dyn_obs.x && snake.snakeNode[0].y == dyn_obs.y) {
+        return 0;
     }
     return 1;
 }
@@ -318,4 +364,42 @@ void SpeedControl(){
         case 30: snake.speed = 40; break;
         default: break;
     }
+}
+
+void SkillControl() {
+    if (invincible_timer > 0) invincible_timer--;
+    
+    if (slow_timer > GetTickCount()) {
+        GotoXY(50, 7);
+        printf("SLOW MODE ");
+    } else {
+        if (slow_timer > 0) {
+            slow_timer = 0; // 清除状态
+        }
+        GotoXY(50, 7);
+        printf("          ");
+    }
+}
+
+void InitDynamicObstacle() {
+    dyn_obs.x = MAP_WIDTH / 2;
+    dyn_obs.y = MAP_HEIGHT / 2;
+    dyn_obs.dir = 1;
+}
+
+void MoveDynamicObstacle() {
+    GotoXY(dyn_obs.x, dyn_obs.y);
+    printf(" ");
+    
+    dyn_obs.x += dyn_obs.dir;
+    if (dyn_obs.x <= 1) {
+        dyn_obs.x = 2;
+        dyn_obs.dir = 1;
+    } else if (dyn_obs.x >= MAP_WIDTH - 2) {
+        dyn_obs.x = MAP_WIDTH - 3;
+        dyn_obs.dir = -1;
+    }
+    
+    GotoXY(dyn_obs.x, dyn_obs.y);
+    printf("M"); // M for dynamic obstacle
 }

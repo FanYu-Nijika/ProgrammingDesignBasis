@@ -24,6 +24,12 @@ typedef struct {
 } Snakenode, Obstacle;
 
 typedef struct {
+    int x;
+    int y;
+    int dir;
+} DynamicObstacle;
+
+typedef struct {
     Snakenode snakeNode[1000];
     int length;
     int speed;
@@ -33,6 +39,9 @@ typedef struct {
 extern Snake snake;
 extern Food food;
 extern Obstacle obstacles[OBSTACLE_COUNT];
+extern DynamicObstacle dyn_obs;
+extern int invincible_timer;
+extern DWORD slow_timer;
 
 void GotoXY(int x, int y);  // 移动光标
 void Hide();                // 隐藏光标
@@ -47,3 +56,6 @@ void PrintObstacles();      // 打印障碍物
 int MoveSnake();            // 移动蛇
 int IsCorrect();            // 检查是否有效
 void SpeedControl();        // 控制速度
+void SkillControl();        // 技能控制
+void InitDynamicObstacle(); // 初始化动态障碍物
+void MoveDynamicObstacle(); // 移动动态障碍物
