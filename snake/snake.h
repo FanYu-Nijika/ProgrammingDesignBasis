@@ -15,7 +15,7 @@
 typedef struct {
     int x;
     int y;
-    int type; // 1 for small, 2 for med, 3 for big
+    int type; // 1代表小，2代表中，3代表大
 } Food;
 
 typedef struct {
@@ -34,16 +34,16 @@ extern Snake snake;
 extern Food food;
 extern Obstacle obstacles[OBSTACLE_COUNT];
 
-void GotoXY(int x, int y);  // Move the cursor
-void Hide();                // Hide the cursor
-int Menu();                 // Display menu
-void Help();                // Display help
-void About();               // Display about
-void Leaderboard();         // Display leaderboard
-void SaveScore(int score);  // Save score
-void InitMap();             // Initialize map
-void PrintFood();           // Print food
-void PrintObstacles();      // Print obstacles
-int MoveSnake();            // Move snake
-int IsCorrect();            // Check if valid
-void SpeedControl();        // Control speed
+void GotoXY(int x, int y);  // 移动光标
+void Hide();                // 隐藏光标
+int Menu();                 // 显示菜单
+void Help();                // 显示帮助
+void About();               // 显示关于
+void Leaderboard();         // 显示排行榜
+void SaveScore(int score);  // 保存分数
+void InitMap();             // 初始化地图
+void PrintFood();           // 打印食物
+void PrintObstacles();      // 打印障碍物
+int MoveSnake();            // 移动蛇
+int IsCorrect();            // 检查是否有效
+void SpeedControl();        // 控制速度

@@ -1,7 +1,7 @@
 #include "snake.h"
 
 int main(){
-    srand((unsigned int)time(NULL)); // Seed the random number generator
+    srand((unsigned int)time(NULL)); // 初始化随机数种子
     int end = 1, result;
     while (end){
         result = Menu();

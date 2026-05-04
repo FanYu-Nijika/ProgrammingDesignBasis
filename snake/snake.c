@@ -2,9 +2,9 @@
 
 Snake snake;
 Food food;
-char now_dir = RIGHT; // Initial direction of the snake
-char direction = RIGHT; // expected direction based on user input
-Obstacle obstacles[OBSTACLE_COUNT]; // obstacles on map
+char now_dir = RIGHT; // 蛇的初始方向
+char direction = RIGHT; // 根据用户输入的预期方向
+Obstacle obstacles[OBSTACLE_COUNT]; // 地图上的障碍物
 
 int Menu(){
     GotoXY(40, 12);
@@ -30,12 +30,12 @@ int Menu(){
         case '3': result = 3; break;
         case '4': result = 4; break;
     }
-    system("cls"); // Clear the screen
+    system("cls"); // 清屏
     return result;
 }
 void GotoXY(int x, int y){
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE); // Get the handle to the console output
-    COORD coord; // Define a COORD structure to hold the coordinates
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE); // 获取控制台输出的句柄
+    COORD coord; // 定义 COORD 结构体用于保存坐标
     coord.X = x;
     coord.Y = y;
     SetConsoleCursorPosition(hOut, coord);
@@ -99,27 +99,27 @@ void InitMap(){
         printf("|");
     }
 
-    // generate obstacles first so food won't spawn on them
+    // 首先生成障碍物，以便食物不会在它们上面生成
     PrintObstacles();
     PrintFood();
     // GotoXY(0, 0);
     // printf("Current Score: 0");
 }
 void PrintFood(){
-    // Place food at random position not overlapping snake or obstacles
+    // 在不与蛇或障碍物重叠的随机位置放置食物
     int flag = 1;
     while (flag){
         flag = 0;
         food.x = rand() % (MAP_WIDTH - 2) + 1;
         food.y = rand() % (MAP_HEIGHT - 2) + 1;
-        // avoid snake
+        // 避开蛇
         for (int k = 0; k <= snake.length - 1; ++k){
             if (food.x == snake.snakeNode[k].x && food.y == snake.snakeNode[k].y){
                 flag = 1;
                 break;
             }
         }
-        // avoid obstacles
+        // 避开障碍物
         if (!flag){
             for (int o = 0; o < OBSTACLE_COUNT; ++o){
                 if (food.x == obstacles[o].x && food.y == obstacles[o].y){
@@ -128,10 +128,10 @@ void PrintFood(){
             }
         }
     }
-    // choose a random food type: 1 small, 2 medium, 3 big
+    // 随机选择食物类型：1 小，2 中，3 大
     food.type = rand() % 3 + 1;
     GotoXY(food.x, food.y);
-    // different symbol per food type
+    // 不同食物类型对应不同符号
     if (food.type == 1) printf("$");
     else if (food.type == 2) printf("&");
     else printf("*");
@@ -180,10 +180,10 @@ int MoveSnake(){
     GotoXY(snake.snakeNode[0].x, snake.snakeNode[0].y);
     printf("@");
     Hide();
-    // check if ate food
+    // 检查是否吃到了食物
     if (snake.snakeNode[0].x == food.x && snake.snakeNode[0].y == food.y){
-        int grow = food.type; // growth depends on food type
-        // append copies of previous tail position to represent growth
+        int grow = food.type; // 生长长度取决于食物类型
+        // 将之前尾部的副本来充当生长的部分
         for (int g = 0; g < grow; ++g){
             if (snake.length < 1000){
                 snake.snakeNode[snake.length] = temp;
@@ -194,21 +194,21 @@ int MoveSnake(){
     }
 
     if (!flag){
-        // erase previous tail
+        // 擦除之前的尾部
         GotoXY(temp.x, temp.y);
         printf(" ");
     } else {
-        // place new food and update score display
+        // 放置新食物并更新分数显示
         PrintFood();
         GotoXY(50, 5);
         printf("Current Score: %d", snake.length - 3);
     }
 
-    // handle self-collision by trimming tail instead of ending game
+    // 处理自身碰撞通过剪断尾巴而不是直接结束游戏
     for (int i = 1; i < snake.length; ++i){
         if (snake.snakeNode[0].x == snake.snakeNode[i].x && snake.snakeNode[0].y == snake.snakeNode[i].y){
-            int new_length = i; // snake becomes length up to collision index
-            // erase the removed parts from screen
+            int new_length = i; // 蛇身长变为到碰撞索引的位置
+            // 将截断的部分从屏幕上擦除
             for (int j = new_length; j < snake.length; ++j){
                 GotoXY(snake.snakeNode[j].x, snake.snakeNode[j].y);
                 printf(" ");
@@ -226,7 +226,7 @@ int MoveSnake(){
         printf("Game Over!\r\n");
         GotoXY(45, 18);
         printf("Press any key to return\r\n");
-        // save score to leaderboard
+        // 将分数保存到排行榜
         SaveScore(snake.length - 3);
         _getch();
         system("cls");
@@ -238,7 +238,7 @@ int MoveSnake(){
     return 1;
 }
 int IsCorrect(){
-    // check collision with obstacles: hitting obstacle ends game
+    // 检测是否与障碍物发生碰撞：撞角将结束游戏
     for (int o = 0; o < OBSTACLE_COUNT; ++o){
         if (snake.snakeNode[0].x == obstacles[o].x && snake.snakeNode[0].y == obstacles[o].y){
             return 0;
@@ -247,7 +247,7 @@ int IsCorrect(){
     return 1;
 }
 
-// Generate and print obstacles at random positions (avoid snake area)
+// 在随机位置生成并打印障碍物（避开蛇身区域）
 void PrintObstacles(){
     for (int i = 0; i < OBSTACLE_COUNT; ++i){
         int ok = 0;
@@ -255,7 +255,7 @@ void PrintObstacles(){
             ok = 1;
             obstacles[i].x = rand() % (MAP_WIDTH - 2) + 1;
             obstacles[i].y = rand() % (MAP_HEIGHT - 2) + 1;
-            // avoid initial snake
+            // 避开初始的蛇
             for (int k = 0; k < snake.length; ++k){
                 if (obstacles[i].x == snake.snakeNode[k].x && obstacles[i].y == snake.snakeNode[k].y){
                     ok = 0; break;
@@ -267,7 +267,7 @@ void PrintObstacles(){
     }
 }
 
-// Save score to leaderboard file (append)
+// 保存分数至排行榜文件（追加方式）
 void SaveScore(int score){
     FILE *f = fopen("leaderboard.txt", "a");
     if (!f) return;
@@ -275,9 +275,9 @@ void SaveScore(int score){
     fclose(f);
 }
 
-// Read leaderboard and display top scores
+// 读取排行榜并在屏幕上显示前几名的分数
 void Leaderboard(){
-    // read scores
+    // 读取分数
     FILE *f = fopen("leaderboard.txt", "r");
     int scores[1000];
     int cnt = 0;
@@ -285,7 +285,7 @@ void Leaderboard(){
         while (cnt < 1000 && fscanf(f, "%d", &scores[cnt]) == 1) cnt++;
         fclose(f);
     }
-    // sort descending
+    // 降序排序
     for (int i = 0; i < cnt; ++i){
         for (int j = i + 1; j < cnt; ++j){
             if (scores[j] > scores[i]){
